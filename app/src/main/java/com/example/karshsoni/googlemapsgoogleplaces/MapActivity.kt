@@ -30,15 +30,24 @@ import kotlinx.android.synthetic.main.activity_map.*
 import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment
 import com.google.android.gms.location.places.ui.PlaceSelectionListener
 import com.google.android.gms.maps.model.*
+import com.google.android.gms.maps.model.Polyline
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 import java.util.*
 import kotlin.collections.ArrayList
 
 
-class MapActivity : AppCompatActivity(), GoogleMap.OnMarkerClickListener, OnMapReadyCallback, GoogleApiClient.OnConnectionFailedListener, PlaceSelectionListener {
+class MapActivity : AppCompatActivity(),
+        GoogleMap.OnMarkerClickListener, OnMapReadyCallback, GoogleApiClient.OnConnectionFailedListener,
+        PlaceSelectionListener {
 
     lateinit var destinationLocation : LatLng
     var listOfLocations: ArrayList<LatLng> = ArrayList()
-
+    val baseUrl = "https://maps.googleapis.com"
+    val API_KEY = "AIzaSyBeAd7xFcadbnddISY8ar2Pg_WAfgi3NFY"
     var polygonCount = 0
     var polylineCount = 0
     var circleCount = 0
@@ -111,10 +120,45 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMarkerClickListener, OnMapR
     }
 
 
+    private fun showRouteToDestination(myLocation: Location, destLocation: LatLng){
+
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_map)
         Log.d(TAG, "in OnCreate: ")
+
+
+        var builder = Retrofit.Builder()
+                .baseUrl(baseUrl)
+                .addConverterFactory(GsonConverterFactory.create())
+
+        var retrofit: Retrofit = builder.build()
+
+        var client: RoutingGoogleMaps = retrofit.create(RoutingGoogleMaps::class.java)
+
+        var call = client.sendRequestForRouting("Ahmedabad",
+                "Surat",
+                API_KEY)
+
+        call.enqueue(object : Callback<MapsDirectionModelClass> {
+            override fun onFailure(call: Call<MapsDirectionModelClass>?, t: Throwable?) {
+                Toast.makeText(applicationContext, "error:( ", Toast.LENGTH_LONG).show()
+            }
+
+            override fun onResponse(call: Call<MapsDirectionModelClass>?, response: Response<MapsDirectionModelClass>?) {
+                Toast.makeText(applicationContext, "Success: " + response!!.body(), Toast.LENGTH_LONG).show()
+
+            }
+        })
+
+
+
+
+
+
+
         getLocationPermission()
         init()
             btnShowPolygon.setOnClickListener{
@@ -181,12 +225,12 @@ class MapActivity : AppCompatActivity(), GoogleMap.OnMarkerClickListener, OnMapR
         hideSoftKeyboard()
     }
 
-    private fun showRouteToDestination(myLocation: Location, destLocation: LatLng){
-        val uri = String.format(Locale.ENGLISH, "http://maps.google.com/maps?saddr=%f,%f(%s)&daddr=%f,%f (%s)", myLocation.latitude, myLocation.longitude, "Home Sweet Home", destLocation.latitude, destLocation.longitude, "Travel HERE")
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
-        intent.`package` = "com.google.android.apps.maps"
-        startActivity(intent)
-    }
+//    private fun showRouteToDestination(myLocation: Location, destLocation: LatLng){
+//        val uri = String.format(Locale.ENGLISH, "http://maps.google.com/maps?saddr=%f,%f(%s)&daddr=%f,%f (%s)", myLocation.latitude, myLocation.longitude, "Home Sweet Home", destLocation.latitude, destLocation.longitude, "Travel HERE")
+//        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+//        intent.`package` = "com.google.android.apps.maps"
+//        startActivity(intent)
+//    }
 
     private fun getDeviceLocation(){
         Log.d(TAG, "getDeviceLocation: getting the current devices location ")
