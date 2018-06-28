@@ -21,62 +21,82 @@
         map:layout_constraintTop_toTopOf="parent"
         tools:context=".MapActivity" />
 
-    <android.support.constraint.ConstraintLayout
-        android:id="@+id/constraintLayout1"
+    <fragment
+        android:id="@+id/place_autocomplete_fragment"
+        android:name="com.google.android.gms.location.places.ui.PlaceAutocompleteFragment"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
-        android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/white_border"
-        android:elevation="10dp"
+        android:layout_marginTop="30dp"
+        android:hint="@string/enter_address_city_or_zipcode"
+        android:imeOptions="actionSearch"
+        android:textColor="#000"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/map"
-        tools:ignore="UnusedAttribute"
-        >
+        app:layout_constraintTop_toTopOf="@+id/map" />
 
-        <ImageView
-            android:id="@+id/imageView"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_marginLeft="8dp"
-            android:layout_marginStart="8dp"
-            android:src="@drawable/ic_magnify"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-
-        <AutoCompleteTextView
-            android:id="@+id/inputSearch"
-            android:layout_width="324dp"
-            android:layout_height="39dp"
-            android:layout_marginBottom="8dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginRight="8dp"
-            android:layout_marginTop="8dp"
-            android:textColor="#000"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@+id/imageView"
-            app:layout_constraintTop_toTopOf="parent"
-            android:imeOptions="actionSearch"
-            android:hint="@string/enter_address_city_or_zipcode"/>
-
-
-    </android.support.constraint.ConstraintLayout>
 
     <ImageView
         android:id="@+id/icGps"
-        android:src="@drawable/ic_gps"
         android:layout_width="40dp"
         android:layout_height="40dp"
         android:layout_marginEnd="16dp"
         android:layout_marginRight="16dp"
         android:layout_marginTop="8dp"
+        android:src="@drawable/ic_gps"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/constraintLayout1" />
+        app:layout_constraintTop_toBottomOf="@+id/place_autocomplete_fragment" />
+
+    <Button
+        android:id="@+id/btnMapType"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:text="@string/change_map_type"
+        app:layout_constraintEnd_toStartOf="@+id/icGps"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/place_autocomplete_fragment" />
+
+    <Button
+        android:id="@+id/btnShowPolygon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginRight="16dp"
+        android:text="@string/show_polygon"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/btnPolyline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginStart="8dp"
+        android:text="@string/polyline"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/btnShowPolygon"
+        app:layout_constraintStart_toEndOf="@+id/btnCircle" />
+
+    <Button
+        android:id="@+id/btnCircle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginStart="16dp"
+        android:text="@string/circle"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </android.support.constraint.ConstraintLayout>

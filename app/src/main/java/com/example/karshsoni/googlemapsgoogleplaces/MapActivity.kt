@@ -2,37 +2,69 @@ package com.example.karshsoni.googlemapsgoogleplaces
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
-import android.location.Address
-import android.location.Geocoder
+import android.graphics.Color
+import android.location.Location
+import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
-import android.view.KeyEvent
 import android.view.View
-import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
+import com.google.android.gms.common.api.Status
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.places.Place
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
-import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.tasks.Task
 import kotlinx.android.synthetic.main.activity_map.*
-import com.google.android.gms.location.places.Places
-import com.google.android.gms.maps.model.LatLngBounds
-import com.google.android.gms.maps.model.MarkerOptions
-import java.io.IOException
+import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment
+import com.google.android.gms.location.places.ui.PlaceSelectionListener
+import com.google.android.gms.maps.model.*
+import java.util.*
+import kotlin.collections.ArrayList
 
 
-class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.OnConnectionFailedListener {
+class MapActivity : AppCompatActivity(), GoogleMap.OnMarkerClickListener, OnMapReadyCallback, GoogleApiClient.OnConnectionFailedListener, PlaceSelectionListener {
+
+    lateinit var destinationLocation : LatLng
+    var listOfLocations: ArrayList<LatLng> = ArrayList()
+
+    var polygonCount = 0
+    var polylineCount = 0
+    var circleCount = 0
+    var polyline : Polyline? = null
+    var polygon : Polygon? = null
+    var circle : Circle? = null
+
+
+    override fun onMarkerClick(p0: Marker?): Boolean {
+        Log.d(TAG, "onMarkerClick: Clicked");
+        showRouteToDestination(currentLocation, destinationLocation)
+        return true
+    }
+
+    override fun onPlaceSelected(p0: Place?) {
+        Log.i(TAG, "Place: " + p0!!.getName())
+        moveCamera(LatLng(p0.latLng.latitude
+                , p0.latLng.longitude), DEFAULT_ZOOM,
+                p0.address.toString())
+        destinationLocation = p0.latLng
+    }
+
+    override fun onError(p0: Status?) {
+        Log.i(TAG, "An error occurred: " + p0)
+    }
+
     override fun onConnectionFailed(p0: ConnectionResult) {
 
     }
@@ -43,7 +75,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.OnC
     lateinit var mMap : GoogleMap
     private val DEFAULT_ZOOM = 15f
     lateinit var mFusedLocationProviderClient: FusedLocationProviderClient
-    private val LAT_LNG_BOUNDS = LatLngBounds( LatLng(-40.0, -168.0), LatLng(71.0, 136.0))
+    lateinit var currentLocation: Location
 
     override fun onMapReady(p0: GoogleMap?) {
         Toast.makeText(this, "Map is Ready", Toast.LENGTH_LONG).show()
@@ -58,8 +90,23 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.OnC
                 return
             }
             mMap.isMyLocationEnabled = true
-            mMap.uiSettings.isMyLocationButtonEnabled = true
+            mMap.uiSettings.isMyLocationButtonEnabled = false
+            fun rand(start: Int, end: Int) = Random().nextInt(end + 1 - start) + start
+            btnMapType.setOnClickListener {
+                when (rand(1, 4)) {
+                    1 ->
+                        mMap.mapType = GoogleMap.MAP_TYPE_HYBRID
+                    2 ->
+                        mMap.mapType = GoogleMap.MAP_TYPE_NONE
+                    3 ->
+                        mMap.mapType = GoogleMap.MAP_TYPE_SATELLITE
+                    4 ->
+                        mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
+                    else -> Toast.makeText(this, "Something went wrong", Toast.LENGTH_LONG).show()
+                }
+            }
             init()
+            mMap.setOnMarkerClickListener(this)
         }
     }
 
@@ -70,65 +117,75 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.OnC
         Log.d(TAG, "in OnCreate: ")
         getLocationPermission()
         init()
+            btnShowPolygon.setOnClickListener{
+                if(polylineCount!=0 && polylineCount % 2 == 1){
+                    polylineCount = 0
+                    polyline!!.remove()
+                    polyline = null
+
+                }else if(circleCount!=0 && circleCount % 2 == 1){
+                    circleCount = 0
+                    circle!!.remove()
+                    circle = null
+                }else{
+                    Toast.makeText(this, "Good to Go", Toast.LENGTH_SHORT).show()
+                    polygonCount = 0
+                }
+                showPolygon(listOfLocations)
+            }
+            btnPolyline.setOnClickListener {
+                if(polygonCount!=0 && polygonCount % 2 == 1){
+                    polygonCount = 0
+                    polygon!!.remove()
+                    polygon = null
+                }else if(circleCount!=0 && circleCount % 2 == 1){
+                    circleCount = 0
+                    circle!!.remove()
+                    circle = null
+                }else{
+                    Toast.makeText(this, "Good to Go", Toast.LENGTH_SHORT).show()
+                    polylineCount = 0
+                }
+                showPolyline(listOfLocations)
+            }
+            btnCircle.setOnClickListener {
+                if(polylineCount!=0 && polylineCount % 2 == 1){
+                    polylineCount = 0
+                    polyline!!.remove()
+                    polyline = null
+                }else if(polygonCount!=0 && polygonCount % 2 == 1){
+                    polygonCount = 0
+                    polygon!!.remove()
+                    polygon = null
+                }else{
+                    Toast.makeText(this, "Good to Go", Toast.LENGTH_SHORT).show()
+                    circleCount = 0
+                }
+                showCircle(listOfLocations)
+            }
+
     }
 
     private fun init() {
         Log.d(TAG, "init: initializing")
 
-//        var geoDataClient = Places.getGeoDataClient(this)
-//        var placeDetectionClient = Places.getPlaceDetectionClient(this)
-//        var mGoogleApiClient = GoogleApiClient
-//                .Builder(this)
-//                .addApi(Places.GEO_DATA_API)
-//                .addApi(Places.PLACE_DETECTION_API)
-//        .build()
+        var autocompleteFragment = fragmentManager
+                .findFragmentById(R.id.place_autocomplete_fragment) as PlaceAutocompleteFragment
 
+        autocompleteFragment.setOnPlaceSelectedListener(this)
 
-//        var placeAutocompleteAdapter = PlaceAutocompleteAdapter(this, mGoogleApiClient, LAT_LNG_BOUNDS, null)
-
-//        inputSearch.setAdapter(placeAutocompleteAdapter)
-
-        inputSearch.setOnEditorActionListener({ textView, actionId, keyEvent ->
-            if (actionId == EditorInfo.IME_ACTION_SEARCH
-                    || actionId == EditorInfo.IME_ACTION_DONE
-                    || keyEvent.action == KeyEvent.ACTION_DOWN
-                    || keyEvent.action == KeyEvent.KEYCODE_ENTER) {
-
-                Log.d(TAG, "init: pressed")
-                //execute our method for searching
-                geoLocate()
-            }
-
-            false
-        })
         icGps.setOnClickListener {
             getDeviceLocation()
         }
+
         hideSoftKeyboard()
     }
 
-    private fun geoLocate(){
-        Log.d(TAG, "geoLocate: geolocating")
-
-        val searchString = inputSearch.text.toString()
-
-        var geoCoder = Geocoder(this)
-        var list: List<Address> = ArrayList()
-        try {
-            list = geoCoder.getFromLocationName(searchString,1)
-        }catch (e: IOException){
-            Log.e(TAG, "IOEception: "+e)
-        }
-
-        if(list.isNotEmpty()){
-            val address = list[0]
-            Log.d(TAG, "geoLocate: "+ address.toString())
-//            Toast.makeText(this, address.toString(), Toast.LENGTH_LONG).show()
-
-            moveCamera(LatLng(address.latitude, address.longitude), DEFAULT_ZOOM,
-                    address.getAddressLine(0))
-        }
-
+    private fun showRouteToDestination(myLocation: Location, destLocation: LatLng){
+        val uri = String.format(Locale.ENGLISH, "http://maps.google.com/maps?saddr=%f,%f(%s)&daddr=%f,%f (%s)", myLocation.latitude, myLocation.longitude, "Home Sweet Home", destLocation.latitude, destLocation.longitude, "Travel HERE")
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+        intent.`package` = "com.google.android.apps.maps"
+        startActivity(intent)
     }
 
     private fun getDeviceLocation(){
@@ -141,7 +198,7 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.OnC
                 location.addOnCompleteListener {
                     if(it.isSuccessful){
                         Log.d(TAG, "getDeviceLocation: found Location")
-                        var currentLocation = it.result
+                        currentLocation = it.result
                         moveCamera(LatLng(currentLocation.latitude, currentLocation.longitude),
                                 DEFAULT_ZOOM, "My Location")
                     }else{
@@ -160,14 +217,67 @@ class MapActivity : AppCompatActivity(), OnMapReadyCallback, GoogleApiClient.OnC
         Log.d(TAG, "moveCamera: moving the camera to: lat: " + latLng.latitude + ", lng: " + latLng.longitude );
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, zoom))
 
+        var icon = BitmapDescriptorFactory.fromResource(R.drawable.ic_marker)
+
         if(title != "My Location"){
+            listOfLocations.add(latLng)
             var options = MarkerOptions()
                     .position(latLng)
                     .title(title)
+                    .icon(icon)
             mMap.addMarker(options)
+
+        }
+        hideSoftKeyboard()
+    }
+
+    private fun showPolygon(listOfLocation: ArrayList<LatLng>){
+        var polygonOptions = PolygonOptions()
+                .strokeColor(Color.RED)
+                .fillColor(Color.BLUE)
+        for(i in listOfLocation){
+            polygonOptions.add(i)
         }
 
-        hideSoftKeyboard()
+        if(polygon!=null && polygon!!.isVisible){
+            polygonCount = 1
+        }else{
+            polygon = mMap.addPolygon(polygonOptions)
+            polygonCount = 1
+        }
+
+    }
+
+    private fun showPolyline(listOfLocation: ArrayList<LatLng>){
+
+        var polylineOptions = PolylineOptions()
+                .color(Color.BLACK)
+        for(i in listOfLocation){
+            polylineOptions.add(i)
+        }
+
+        if (polyline!=null && polyline!!.isVisible){
+            polylineCount = 1
+        }else{
+            polyline = mMap.addPolyline(polylineOptions)
+            polylineCount = 1
+        }
+
+    }
+
+    private fun showCircle(listOfLocation: ArrayList<LatLng>){
+
+        var circleOptions = CircleOptions()
+                .fillColor(Color.CYAN)
+                .center(listOfLocation[0])
+                .radius(25.00)
+
+        if(circle!=null && circle!!.isVisible){
+            circleCount = 1
+        }else{
+            circle = mMap.addCircle(circleOptions)
+            circleCount = 1
+        }
     }
 
     private fun initMap() {
