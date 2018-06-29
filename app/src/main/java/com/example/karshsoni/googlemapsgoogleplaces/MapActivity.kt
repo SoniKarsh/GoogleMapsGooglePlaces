@@ -2,11 +2,9 @@ package com.example.karshsoni.googlemapsgoogleplaces
 
 import android.Manifest
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Location
-import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
@@ -138,18 +136,21 @@ class MapActivity : AppCompatActivity(),
 
         var client: RoutingGoogleMaps = retrofit.create(RoutingGoogleMaps::class.java)
 
-        var call = client.sendRequestForRouting("Ahmedabad",
-                "Surat",
-                API_KEY)
+//        var call = client.sendRequestForRouting("23.0225713, 72.571322",
+//                "21.1702535, 72.83118469999999",
+//                API_KEY)
 
-        call.enqueue(object : Callback<MapsDirectionModelClass> {
-            override fun onFailure(call: Call<MapsDirectionModelClass>?, t: Throwable?) {
+        var call = client.sendRequest("https://maps.googleapis.com/maps/api/directions/json?origin=Ahmedabad&destination=surat&key=AIzaSyBeAd7xFcadbnddISY8ar2Pg_WAfgi3NFY")
+
+        call.enqueue(object : Callback<GoogleApiResponseModel> {
+            override fun onFailure(call: Call<GoogleApiResponseModel>?, t: Throwable?) {
                 Toast.makeText(applicationContext, "error:( ", Toast.LENGTH_LONG).show()
             }
 
-            override fun onResponse(call: Call<MapsDirectionModelClass>?, response: Response<MapsDirectionModelClass>?) {
-                Toast.makeText(applicationContext, "Success: " + response!!.body(), Toast.LENGTH_LONG).show()
-
+            override fun onResponse(call: Call<GoogleApiResponseModel>?, response: Response<GoogleApiResponseModel>?) {
+                var googleApiResponseModel = response!!.body()
+                Log.d(TAG, "onResponse: "+ googleApiResponseModel)
+                fillList(googleApiResponseModel!!)
             }
         })
 
@@ -159,56 +160,86 @@ class MapActivity : AppCompatActivity(),
 
 
 
+
         getLocationPermission()
         init()
-            btnShowPolygon.setOnClickListener{
-                if(polylineCount!=0 && polylineCount % 2 == 1){
-                    polylineCount = 0
-                    polyline!!.remove()
-                    polyline = null
+        btnShowPolygon.setOnClickListener{
+            if(polylineCount!=0 && polylineCount % 2 == 1){
+                polylineCount = 0
+                polyline!!.remove()
+                polyline = null
 
-                }else if(circleCount!=0 && circleCount % 2 == 1){
-                    circleCount = 0
-                    circle!!.remove()
-                    circle = null
-                }else{
-                    Toast.makeText(this, "Good to Go", Toast.LENGTH_SHORT).show()
-                    polygonCount = 0
-                }
-                showPolygon(listOfLocations)
+            }else if(circleCount!=0 && circleCount % 2 == 1){
+                circleCount = 0
+                circle!!.remove()
+                circle = null
+            }else{
+                Toast.makeText(this, "Good to Go", Toast.LENGTH_SHORT).show()
+                polygonCount = 0
             }
-            btnPolyline.setOnClickListener {
-                if(polygonCount!=0 && polygonCount % 2 == 1){
-                    polygonCount = 0
-                    polygon!!.remove()
-                    polygon = null
-                }else if(circleCount!=0 && circleCount % 2 == 1){
-                    circleCount = 0
-                    circle!!.remove()
-                    circle = null
-                }else{
-                    Toast.makeText(this, "Good to Go", Toast.LENGTH_SHORT).show()
-                    polylineCount = 0
-                }
-                showPolyline(listOfLocations)
+            showPolygon(listOfLocations)
+        }
+        btnPolyline.setOnClickListener {
+            if(polygonCount!=0 && polygonCount % 2 == 1){
+                polygonCount = 0
+                polygon!!.remove()
+                polygon = null
+            }else if(circleCount!=0 && circleCount % 2 == 1){
+                circleCount = 0
+                circle!!.remove()
+                circle = null
+            }else{
+                Toast.makeText(this, "Good to Go", Toast.LENGTH_SHORT).show()
+                polylineCount = 0
             }
-            btnCircle.setOnClickListener {
-                if(polylineCount!=0 && polylineCount % 2 == 1){
-                    polylineCount = 0
-                    polyline!!.remove()
-                    polyline = null
-                }else if(polygonCount!=0 && polygonCount % 2 == 1){
-                    polygonCount = 0
-                    polygon!!.remove()
-                    polygon = null
-                }else{
-                    Toast.makeText(this, "Good to Go", Toast.LENGTH_SHORT).show()
-                    circleCount = 0
-                }
-                showCircle(listOfLocations)
+            showPolyline(listOfLocations)
+        }
+        btnCircle.setOnClickListener {
+            if(polylineCount!=0 && polylineCount % 2 == 1){
+                polylineCount = 0
+                polyline!!.remove()
+                polyline = null
+            }else if(polygonCount!=0 && polygonCount % 2 == 1){
+                polygonCount = 0
+                polygon!!.remove()
+                polygon = null
+            }else{
+                Toast.makeText(this, "Good to Go", Toast.LENGTH_SHORT).show()
+                circleCount = 0
             }
+            showCircle(listOfLocations)
+        }
 
     }
+
+
+    private fun fillList(googleApiResponseModel: GoogleApiResponseModel){
+        var routes = googleApiResponseModel.routes
+        var legs = routes!![0]!!.legs
+//        Log.d(TAG, "fillList: "+legs!![1])
+        var startLocation = legs!![0]!!.startLocation
+        var endLocation = legs[0]!!.endLocation
+//        Log.d(TAG, "fillList: "+ startLocation+"\n"+endLocation)
+        var stepsItem = legs[0]!!.steps
+        Log.d(TAG, "fillList: "+ stepsItem!!.size)
+        for (i in 0 until stepsItem.size){
+            drawOnMap(stepsItem[i]!!.startLocation!!, stepsItem[i]!!.endLocation!!)
+        }
+//        drawOnMap(startLocation!!, endLocation!!)
+    }
+
+
+    private fun drawOnMap(startLoc: StartLocation, endLoc: EndLocation){
+        var polylineOptions = PolylineOptions()
+                .color(Color.RED)
+
+        var latLng = LatLng(startLoc.lat!!, startLoc.lng!!)
+        var latLng1 = LatLng(endLoc.lat!!, endLoc.lng!!)
+        polylineOptions.add(latLng)
+        polylineOptions.add(latLng1)
+        var xPoly = mMap.addPolyline(polylineOptions)
+    }
+
 
     private fun init() {
         Log.d(TAG, "init: initializing")

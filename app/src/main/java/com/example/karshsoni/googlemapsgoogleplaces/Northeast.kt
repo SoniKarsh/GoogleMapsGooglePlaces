@@ -1,4 +1,14 @@
 package com.example.karshsoni.googlemapsgoogleplaces
 
-data class Northeast(val lng: Double = 0.0,
-                     val lat: Double = 0.0)
+
+import com.google.gson.annotations.SerializedName
+
+
+data class Northeast(
+
+	@field:SerializedName("lng")
+	val lng: Double? = null,
+
+	@field:SerializedName("lat")
+	val lat: Double? = null
+)
