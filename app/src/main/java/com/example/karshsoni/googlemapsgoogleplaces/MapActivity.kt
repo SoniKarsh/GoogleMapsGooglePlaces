@@ -2,9 +2,11 @@ package com.example.karshsoni.googlemapsgoogleplaces
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Location
+import android.net.Uri
 import android.os.Bundle
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
@@ -118,9 +120,6 @@ class MapActivity : AppCompatActivity(),
     }
 
 
-    private fun showRouteToDestination(myLocation: Location, destLocation: LatLng){
-
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -153,13 +152,6 @@ class MapActivity : AppCompatActivity(),
                 fillList(googleApiResponseModel!!)
             }
         })
-
-
-
-
-
-
-
 
         getLocationPermission()
         init()
@@ -221,22 +213,29 @@ class MapActivity : AppCompatActivity(),
         var endLocation = legs[0]!!.endLocation
 //        Log.d(TAG, "fillList: "+ startLocation+"\n"+endLocation)
         var stepsItem = legs[0]!!.steps
-        Log.d(TAG, "fillList: "+ stepsItem!!.size)
-        for (i in 0 until stepsItem.size){
-            drawOnMap(stepsItem[i]!!.startLocation!!, stepsItem[i]!!.endLocation!!)
+//        Log.d(TAG, "fillList: "+ stepsItem!![0]!!.polyline)
+        var decodePoly1 = DecodePoly()
+//        Log.d(TAG, "fillList: yo"+ decodePoly1.decodePoly(stepsItem[0]!!.polyline!!.points.toString()))
+        var polyList: ArrayList<ArrayList<LatLng>> = ArrayList()
+        for (i in 0 until stepsItem!!.size){
+            polyList.add(decodePoly1.decodePoly(stepsItem[i]!!.polyline!!.points.toString()) as ArrayList<LatLng>)
         }
-//        drawOnMap(startLocation!!, endLocation!!)
+        drawOnMap(polyList)
     }
 
 
-    private fun drawOnMap(startLoc: StartLocation, endLoc: EndLocation){
+    private fun drawOnMap(polyList: ArrayList<ArrayList<LatLng>>){
         var polylineOptions = PolylineOptions()
-                .color(Color.RED)
-
-        var latLng = LatLng(startLoc.lat!!, startLoc.lng!!)
-        var latLng1 = LatLng(endLoc.lat!!, endLoc.lng!!)
-        polylineOptions.add(latLng)
-        polylineOptions.add(latLng1)
+                .color(Color.BLUE)
+//                .addAll(polyList!![0])
+        var latLng: LatLng?
+        for(i in polyList.indices)
+        {
+            for(j in polyList[i].indices){
+                latLng = LatLng(polyList[i][j].latitude, polyList[i][j].longitude)
+                polylineOptions.add(latLng)
+            }
+        }
         var xPoly = mMap.addPolyline(polylineOptions)
     }
 
@@ -256,12 +255,12 @@ class MapActivity : AppCompatActivity(),
         hideSoftKeyboard()
     }
 
-//    private fun showRouteToDestination(myLocation: Location, destLocation: LatLng){
-//        val uri = String.format(Locale.ENGLISH, "http://maps.google.com/maps?saddr=%f,%f(%s)&daddr=%f,%f (%s)", myLocation.latitude, myLocation.longitude, "Home Sweet Home", destLocation.latitude, destLocation.longitude, "Travel HERE")
-//        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
-//        intent.`package` = "com.google.android.apps.maps"
-//        startActivity(intent)
-//    }
+    private fun showRouteToDestination(myLocation: Location, destLocation: LatLng){
+        val uri = String.format(Locale.ENGLISH, "http://maps.google.com/maps?saddr=%f,%f(%s)&daddr=%f,%f (%s)", myLocation.latitude, myLocation.longitude, "Home Sweet Home", destLocation.latitude, destLocation.longitude, "Travel HERE")
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri))
+        intent.`package` = "com.google.android.apps.maps"
+        startActivity(intent)
+    }
 
     private fun getDeviceLocation(){
         Log.d(TAG, "getDeviceLocation: getting the current devices location ")
