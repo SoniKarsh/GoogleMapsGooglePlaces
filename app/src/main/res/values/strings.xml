@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">GoogleMapsGooglePlaces</string>
-    <string name="google_maps_API_key">AIzaSyBeAd7xFcadbnddISY8ar2Pg_WAfgi3NFY</string>
     <string name="show_map">Show Map</string>
     <string name="enter_address_city_or_zipcode">Enter Address, City or Zipcode</string>
     <string name="change_map_type">Change Map Type</string>
